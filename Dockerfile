@@ -1,21 +1,21 @@
-# Simple single-stage Dockerfile (keeps build simple; uses npm install so it works without package-lock.json)
-# Use this if you want the easiest-to-run Dockerfile. It is larger than multi-stage images but simple to debug.
-FROM node:18-bullseye-slim
+# Use the official Affine image as a base
+FROM ghcr.io/toeverything/affine:stable
 
-# Create app directory
-WORKDIR /app
+# Set working directory
+WORKDIR /root/.affine
 
-# Copy only package files first to leverage layer caching
-COPY package*.json ./
+# Copy optional configuration or uploads (if you have them)
+# You can create these folders in your repo to customize storage/config
+COPY config ./config
+COPY storage ./storage
 
-# Install dependencies (uses npm install so it does not require package-lock.json)
-RUN npm install --no-audit --prefer-offline
+# Expose Affine port
+EXPOSE 3010
 
-# Copy application source
-COPY . .
+# Environment variables (override via .env in Compose or Helm)
+ENV AFFINE_INDEXER_ENABLED=false \
+    REDIS_SERVER_HOST=redis \
+    DATABASE_URL=postgresql://postgres:password@postgres:5432/affine
 
-# Adjust port to your application's listening port
-EXPOSE 3000
-
-# Default start command - change if your app uses a different script or entrypoint
-CMD ["npm", "start"]
+# Run the Affine server
+CMD ["npm", "run", "start"]
